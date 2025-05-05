@@ -1,0 +1,2 @@
+"0","model_ols <- lm(Qual ~ ., data = data_wine_tidy)"
+"0","knitr::kable(summary(model_ols)$coefficients)"
