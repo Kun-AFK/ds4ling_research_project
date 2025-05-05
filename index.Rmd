@@ -78,7 +78,7 @@ kable(mini_table, caption = "data_wine_tidy (Part vars)", align="c")
 
 ####Five-Number Summaries (min, Q1, median, Q3, max)
 
-####Variables fixed.acidity, volatile.acidity, alcohol, quality
+####Variables fixed.acidity, volatile.acidity, alcohol, quality, ...
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 five_num_summary <- data_wine_tidy %>%
