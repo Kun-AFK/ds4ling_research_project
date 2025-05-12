@@ -78,7 +78,7 @@ kable(mini_table, caption = "data_wine_tidy (Part vars)", align="c")
 
 ####Five-Number Summaries (min, Q1, median, Q3, max)
 
-####Variables fixed.acidity, volatile.acidity, alcohol, quality
+####Variables fixed.acidity, volatile.acidity, alcohol, quality, ...
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 five_num_summary <- data_wine_tidy %>%
@@ -245,7 +245,7 @@ knitr::include_graphics("plots/cv_lasso.png")
 #Model Performance Comparison
 - LASSO and OLS perform similarly in predicting wine quality, with minimal differences in MAE, RMSE, and R².
 ```{r model_cp, echo=FALSE, out.width = '70%', fig.align='center'}
-knitr::include_graphics("plots/model_cp.png")
+knitr::include_graphics("plots/cp1.png")
 ```
 
 ---
@@ -264,12 +264,16 @@ knitr::include_graphics("plots/model_cp.png")
   - Indicates high confidence in these predictors' impact.
 ---
 ```{r , echo=FALSE, message=FALSE, warning=FALSE}
-model_bayes <- stan_glm(
+priors <- c(
+  set_prior("normal(0, 1)", class = "b"),         # fixed effects 的先验
+  set_prior("normal(0, 5)", class = "Intercept")  # 截距的先验
+)
+
+model_bayes <- brm(
   Qual ~ .,
   data            = data_wine_tidy,
-  family          = gaussian(),
-  prior           = normal(0, 1),        # Prior for fixed effects
-  prior_intercept = normal(0, 5),        # Prior for intercept
+  family          = cumulative(link = "logit"),
+  prior           = priors,
   chains          = 4,
   cores           = parallel::detectCores(),
   iter            = 2000,

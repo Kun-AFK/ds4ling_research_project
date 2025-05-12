@@ -6,9 +6,14 @@ library(tidyr)
 library(ds4ling)
 library(lme4)
 library(lmerTest)
-library(GGally)       # ggpairs()
-library(corrplot)     # corrplot()
-library(ggcorrplot)   # ggcorrplot()
+library(GGally)
+library(corrplot)
+library(ggcorrplot)
+library(rstanarm)
+library(brms)
+library(glmnet)
+library(caret)
+library(tibble)
 
 # Read the raw data
 data_wine_raw <- read.csv(
@@ -45,7 +50,7 @@ data_wine_tidy <- data_wine_raw %>%
   write_csv("./data_tidy/data_wine_tidy.csv")
 
 
-# 3.3 dplyr summary: mean, median, first/third quartile
+# dplyr summary
 data_wine_tidy |>
   summarise(across(
     .cols = everything(),
@@ -85,7 +90,7 @@ five_num_summary <- data_wine_tidy |>
 # Display the Five-Number Summary
 print(five_num_summary)
 
-# 2. Create Boxplots for all variables
+# Create Boxplots for all variables
 data_long <- data_wine_tidy %>%
   pivot_longer(
     cols = everything(),
@@ -101,9 +106,9 @@ ggplot(data_long, aes(x = Variable, y = Value, fill = Variable)) +
     y = "Value"
   ) +
   theme_minimal(base_size = 12) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Rotate x-axis labels for readability
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_fill_brewer(palette = "Pastel1") +
-  theme(legend.position = "none")  # Remove legend since x-axis labels are sufficient
+  theme(legend.position = "none")
 
 
 # Select the core variables and pivot to long format
@@ -125,43 +130,32 @@ ggplot(data_core, aes(x = Variable, y = Value)) +
   ) +
   theme_minimal(base_size = 14)
 
-# 4. Variable correlation heatmap
-
-# 4.1 Calculate correlation matrix
+# Variable correlation heatmap
+# Calculate correlation matrix
 corr_mat <- cor(data_wine_tidy, use = "pairwise.complete.obs")
 
-# 2. Generate a gradient color from blue to white to red
+# Generate a gradient color from blue to white to red
 my_col <- colorRampPalette(c("#2166AC", "white", "#B2182B"))(200)
 
-# 3. Plot
 corrplot(
   corr_mat,
-  method      = "color",      # Fill squares with color
-  col         = my_col,       # Custom color scheme
-  type        = "upper",      # Only plot upper triangle
-  order       = "hclust",     # Sort by hierarchical clustering
-  tl.col      = "black",      # Variable label color
-  tl.srt      = 45,           # Rotate labels 45°
-  tl.cex      = 0.8,          # Label font size
-  addCoef.col = "black",      # Add coefficients in squares
-  number.cex  = 0.7,          # Coefficient font size
-  diag        = FALSE,        # Do not plot diagonal
-  mar         = c(0,0,1,0)    # Leave space for title
+  method      = "color",
+  col         = my_col,
+  type        = "upper",
+  order       = "hclust",
+  tl.col      = "black", 
+  tl.srt      = 45,
+  tl.cex      = 0.8,
+  addCoef.col = "black",
+  number.cex  = 0.7,
+  diag        = FALSE,
+  mar         = c(0,0,1,0)
 )
 title("Wine Quality Variable correlation heatmap", line = 0.5, cex.main = 1.2)
 
-# 4.3 ggcorrplot package example (more visually appealing)
-ggcorrplot(
-  corr_mat,
-  hc.order = TRUE,
-  lab      = TRUE,          # Write coefficients in squares
-  lab_size = 3,
-  outline.col = "white"
-)
 
-# 5. Pairwise scatterplot matrix (Pairwise scatterplots + correlations + density plots)
+#Pairwise scatterplot matrix
 
-# 5.1 Simplest: GGally::ggpairs
 GGally::ggpairs(
   data_wine_tidy,
   lower = list(continuous = wrap("points", alpha = 0.3, size = 0.5)),
@@ -176,31 +170,22 @@ summary(model_ols)
 
 diagnosis(model_ols)
 
-# 7. Lasso regression: glmnet package
-# ─────────────────────────────────────────────────────────────────────────────
-library(glmnet)
-
-# Prepare matrices: x (independent variables), y (dependent variable)
+# Fit the Lasso regression
 x <- model.matrix(Qual ~ ., data = data_wine_tidy)[, -1]
 y <- data_wine_tidy$Qual
 
-# 7.1 10-fold cross-validation to find optimal λ
+# 10-fold cross-validation to find optimal λ
 set.seed(2025)
 cv_lasso <- cv.glmnet(x, y, alpha = 1, family = "gaussian", standardize = TRUE, nfolds = 10)
-plot(cv_lasso)                # Error curve
+plot(cv_lasso)
 best_lambda <- cv_lasso$lambda.min
 best_lambda
 
-# 7.2 Extract coefficients
+# Extract coefficients
 lasso_coef <- coef(cv_lasso, s = "lambda.min")
-print(lasso_coef)             # Non-zero coefficients are variables selected by Lasso
+print(lasso_coef)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 8. Model performance comparison (RMSE under cross-validation)
-# ─────────────────────────────────────────────────────────────────────────────
-
-library(caret)
-
+# Model performance comparison
 set.seed(2025)
 train_ctrl <- trainControl(method = "cv", number = 10)
 
@@ -226,18 +211,18 @@ ols_cv
 lasso_cv
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 9. Bayesian regression: rstanarm package
-# ─────────────────────────────────────────────────────────────────────────────
-library(rstanarm)
 
-# 9.1 Fit the model (default: Gaussian family)
-model_bayes <- stan_glm(
+#Fit the Bayes model 
+priors <- c(
+  set_prior("normal(0, 1)", class = "b"),
+  set_prior("normal(0, 5)", class = "Intercept")
+)
+
+model_bayes <- brm(
   Qual ~ .,
   data            = data_wine_tidy,
-  family          = gaussian(),
-  prior           = normal(0, 1),        # Prior for fixed effects
-  prior_intercept = normal(0, 5),        # Prior for intercept
+  family          = cumulative(link = "logit"),
+  prior           = priors,
   chains          = 4,
   cores           = parallel::detectCores(),
   iter            = 2000,
@@ -250,4 +235,29 @@ print(model_bayes, digits = 2)
 posterior_interval(model_bayes, prob = 0.95)
 
 # 9.3 Posterior predictive check
-pp_check(model_bayes)        # KDE comparison
+pp_check(model_bayes)
+
+
+
+
+# Binarize: Qual >= 6 as 1, otherwise 0
+data_wine_tidy <- data_wine_tidy |>
+  mutate(HighQual = if_else(Qual >= 6, 1, 0))
+
+# Logistic regression
+model_logit <- glm(
+  formula = HighQual ~ Alc + Sulph + TSO2 + Chlor + VolAcid + FSO2,
+  data    = data_wine_tidy,
+  family  = binomial(link = "logit")
+)
+
+summary(model_logit)
+
+# Calculate odds ratios
+exp(coef(model_logit))
+
+# Predict probabilities & ROC
+library(pROC)
+pred_prob <- predict(model_logit, type = "response")
+roc_obj   <- roc(data_wine_tidy$HighQual, pred_prob)
+plot(roc_obj); auc(roc_obj)

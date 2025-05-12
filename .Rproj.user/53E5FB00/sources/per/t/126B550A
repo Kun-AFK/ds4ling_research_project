@@ -1,27 +1,27 @@
 {
-    "id": "8E7ABC41",
-    "path": "C:/Users/zhang/OneDrive/Desktop/ds4ling_research_project/index.Rmd",
-    "project_path": "index.Rmd",
+    "id": "126B550A",
+    "path": "C:/Users/zhang/OneDrive/Desktop/ds4ling_research_project/docs/Jukun Final paper.Rmd",
+    "project_path": "docs/Jukun Final paper.Rmd",
     "type": "r_markdown",
-    "hash": "2058595269",
+    "hash": "3967762499",
     "contents": "",
     "dirty": false,
-    "created": 1746298435143.0,
+    "created": 1746813407756.0,
     "source_on_save": false,
     "relative_order": 4,
     "properties": {
         "tempName": "Untitled3",
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "80,68",
-        "scrollLine": "76"
+        "cursorPosition": "76,39",
+        "scrollLine": "0"
     },
     "folds": "",
-    "lastKnownWriteTime": 1746406942,
+    "lastKnownWriteTime": 1746837967,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1746406942927,
+    "last_content_update": 1746837967937,
     "read_only": false,
     "read_only_alternatives": []
 }
