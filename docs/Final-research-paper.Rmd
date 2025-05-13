@@ -18,7 +18,7 @@ abstract: |
   <!-- https://tinyurl.com/ybremelq -->
   
 keywords          : "OLS; Lasso Regression; Bayes Regression; Logistics Regression"
-wordcount         : "X"
+wordcount         : "4084"
 
 
 floatsintext      : yes
@@ -40,6 +40,9 @@ output            :
 header-includes:
   - \usepackage{float}
   - \usepackage[justification=centering]{caption} 
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \fancyhead[Lo]{}
 ---
 
 ```{r setup, include = FALSE}
@@ -234,7 +237,9 @@ To mitigate multicollinearity and enforce sparsity in our predictor set, we fit 
 \end{equation}
 
 Prior to fitting, all predictors were standardized and an intercept term retained.
-### λ Selection via 10-Fold Cross-Validation
+
+### Lambda Selection via 10-Fold Cross-Validation
+ 
 Using the glmnet() function, with the penalty parameter $α$ set to 1, we can get a complete Lasso model. We continue to set the response to the quality of the wine, and the dependent variable is the remaining 11 variables. We hope to use the Lasso model to delete as many unimportant variables as possible, making the model parameters simpler - that is, to get a sparse model. This way, we can more clearly understand which physical and chemical properties (variables) have a more significant impact on the quality of the wine.We then output a plot of $Log(λ)$ and Mean Square Error to help determine the optimal $λ$ value.
 ```{r lasso_model, echo=FALSE, message=FALSE, warning=FALSE}
 # Prepare matrices: x (independent variables), y (dependent variable)
@@ -288,7 +293,6 @@ From the comparison of the 10-fold cross validation of the two models, it can be
 
 To account for the ordinal nature of our quality scores (3–8), we replace the Gaussian assumption with a Bayesian cumulative logit model, using the brms package. This framework estimates cutpoints (intercepts) that partition the latent propensity into the seven observed quality levels, and slopes for each predictor, with full posterior uncertainty.
 **Model specification**
-
 \[
 \Pr\bigl(\text{Qual}_i \le k \mid x_i\bigr)
 =\mathrm{logit}^{-1}\bigl(\gamma_k - x_i^\top\beta\bigr),
@@ -303,7 +307,7 @@ where \(\gamma_1<\gamma_2<\cdots<\gamma_7\) are the cutpoints and \(\beta\) the 
 
 The model was fit with four NUTS chains, 2,000 iterations each (1,000 warmup), yielding 4,000 post–warmup draws.
 
-**Posterior summary & convergence**  
+### **Posterior summary & convergence**  
 Table 5 reports posterior medians, standard deviations, and 95% credible intervals for each slope.  Convergence diagnostics are excellent (\(\widehat R = 1.00\), Bulk ESS & Tail ESS >1,500), though 83 divergent transitions suggest increasing `adapt_delta` in future work.
 
 ```{r fit-bayes, echo=FALSE, include=FALSE}
@@ -426,7 +430,6 @@ Finally, other potential influencing factors (such as brewing technology, microb
 \newpage
 \appendix
 ```
-# Appendix
 
 ```{r appendix, echo=TRUE, escape=TRUE, eval=FALSE}
 # Loading necessary library
